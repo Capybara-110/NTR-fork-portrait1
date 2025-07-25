@@ -36,22 +36,14 @@
 <div class="main_div">
 <h1>Repository</h1>
 
-<p>The idea of this project was first briefly outlined in these conference proceedings <nobr><b>[[ PDMU ]]</b></nobr>
-and later a somewhat expanded version was published on <nobr><b>[[ ArXive.org ]]</b></nobr>
+<p>
+You can read more about the Steganeisodos project here 
+<a target="_blank" href="https://mmsharapov.github.io/NTR">https://mmsharapov.github.io/NTR</a>.
 </p>
 
+
 <p>
-It is easy to understand that the best protection is the <span class="term">STR</span>-strategy (<span class="term">specific typing rhythm</span>).
-You can verify this by following <a target="_blank" href="https://mmsharapov.github.io/STR-fork-portrait2">this link</a>.
-but to use the STR-strategy, the user must adhere to a pre-memorized secret rhythm when typing the password, so now
-we are considering a more user-friendly strategy, when he does not need to remember the secret rhythm,
-but type the password as he usually does in his <span class="term">natural typing rhythm (NTR)</span>.
-The program must learn to recognize this rhythm (something similar to the fist of a radio operator) 
-using relevant statistical data, but it is still necessary to distinguish this rhythm from the rhythm of the attacker, 
-who will type the password in a 'common' rhythm.
-Now in this version a simple check is used (more for demonstration purposes) in which the time of pressing each key should be within 
-the range from the minimum to the maximum of the corresponding values obtained from the statistical values 
-(which are established during the program's training phase):
+In this version, we build <b>an adaptive portrait</b> for the user's natural typing rhythm (<span class="term">NTR</span>):
 </p>
 <!--- 
 	All special characters must be replaced with their HTML equivalents. 
@@ -61,85 +53,94 @@ the range from the minimum to the maximum of the corresponding values obtained f
 	etc.
 --->
 <pre><code class="language-javascript">
-const algo_name = "min-max verification";  // Please provide the name of your algorithm
+const algo_name = "portrait 1 ver.";  // Please provide the name of your algorithm
+
+function Portrait_1(arr, options = {}) {
+  // Default options
+  const {
+    relativeTolerance = 0.1,       // 10%
+    absoluteToleranceFactor = 0.01 // 1%
+  } = options;
+
+  // Handling extreme cases
+  if (!arr || arr.length === 0) {
+    return "";
+  }
+  if (arr.length === 1) {
+    return "1";
+  }
+
+  // --- Adaptive tolerance calculation ---
+  const maxMagnitude = Math.max(...arr.map(num =&gt; Math.abs(num)));
+  const adaptiveAbsoluteTolerance = maxMagnitude * absoluteToleranceFactor;
+
+  // --- Auxiliary function for determining similarity ---
+  const areSimilar = (a, b) =&gt; {
+    const absoluteDiff = Math.abs(a - b);
+
+    // 1. Adaptive absolute tolerance check.
+    // This works well for any scale, especially for numbers near zero.
+    if (absoluteDiff &lt;= adaptiveAbsoluteTolerance) {
+      return true;
+    }
+
+    // 2. If the first check fails, we use relative tolerance.
+    // This is important for large numbers, where the absolute difference can be large.
+    const maxLocalMagnitude = Math.max(Math.abs(a), Math.abs(b));
+    if (maxLocalMagnitude === 0) {
+      return true; // if a=0 and b=0
+    }
+    const relativeDiff = absoluteDiff / maxLocalMagnitude;
+
+    return relativeDiff &lt; relativeTolerance;
+  };
+
+  // --- Basic logic ---
+  let portraitString = "";
+  let currentGroupCount = 1;
+
+  for (let i = 1; i &lt; arr.length; i++) {
+    if (areSimilar(arr[i], arr[i - 1])) {
+      currentGroupCount++;
+    } else {
+      portraitString += currentGroupCount;
+      currentGroupCount = 1;
+    }
+  }
+
+  portraitString += currentGroupCount;
+  return portraitString;
+}
+
 
 function checker(stats, arr){
-	for(let j=0; j &lt; stats[0].length; j++){
-		const column = getColumn(stats, j);
-		if((arr[j] &lt;  Math.min(...column)) || (arr[j]  &gt;  Math.max(...column))){
-			return false;
-		}
-	}
-	return true;
+        const av = [];
+        for(let j=0; j &lt; stats[0].length; j++){ 
+                av.push(Aver(getColumn(stats, j)));
+        }
+        const p_arr = Portrait_1(arr);
+        const p_av = Portrait_1(av);
+        return p_arr === p_av;
 }
 </code></pre>
 </p>
 
-<p>
-With proper training (i.e., with sufficient statistical data), this method begins to yield good — though not perfect — results. 
-Most importantly, the method is quite robust against cracking:
-</p>
+
 
 <table>
 <tbody>	
 <tr>
-	<td>min-max verification</td>
-	<td><font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;</td>
+	<td>portrait 1 ver.</td>
+	<td><font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="green">●</font></td>
 </tr>	        
 <tr>
 	<td>Hacker`s attempts</td>
-	<td><font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> <font color="red">●</font> </td>
+	<td><font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="green">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font>&nbsp;<font color="red">●</font></td>
 </tr>	    
 </tbody>
 </table>
 
 
-<p>The most interesting challenge for any researcher in this topic is to propose their own method for recognizing a user's 
-natural typing rhythm. But — and we must stress this again — it is crucial to distinguish the user's rhythm from that of an attacker, 
-who would likely type the password in some generic "common" rhythm.
-Anyone is welcome to fork this project and modify the 
-<code class="language-javascript">function checker(stats, arr)</code>
-recognition function for <span class="term">NTR</span>.
-
-If your function demonstrates statistically good results, the project author will, upon your request, 
-add a link to your proposed fork in the following table:
-</p>
-
-
-<table>
-  <thead>
-    <tr>
-      <th>method</th>
-      <th>link</th>
-      <th>False Rejection Rate, FRR</th>
-      <th>False Acceptance Rate, FAR</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>[NTR] min-max verification</td>
-      <td>this page</td>
-      <td>60 %</td>
-      <td>0 %</td>
-    </tr>
-    <tr>
-      <td>[STR] conf. interval. ver.</td>
-      <td>   
-	      <a target="_blank" href="https://capybara-110.github.io/STR">link</a> 
-      </td>
-      <td>10 %</td>
-      <td>80 %</td>
-    </tr>
-    <tr>
-      <td>[STR] portait 2 ver.</td>
-      <td>   
-	      <a target="_blank" href="https://mmsharapov.github.io/STR-fork-portrait2">link</a> 
-      </td>
-      <td>0 %</td>
-      <td>0 %</td>
-    </tr>           
-  </tbody>
-</table>
 
 
 </div>

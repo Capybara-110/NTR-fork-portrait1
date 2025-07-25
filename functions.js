@@ -39,18 +39,72 @@ function getColumn(S, k) {
   return column;
 }
 
-const algo_name = "min-max verification";  // Please provide the name of your algorithm
+const algo_name = "portrait 1 ver.";  // Please provide the name of your algorithm
 
-function checker(stats, arr){
-	for(let j=0; j<stats[0].length; j++){
-		const column = getColumn(stats, j);
-		if((arr[j] <  Math.min(...column)) || (arr[j] >  Math.max(...column))){
-			return false;
-		}
-	}
-	return true;
+function Portrait_1(arr, options = {}) {
+  // Default options
+  const {
+    relativeTolerance = 0.1,       // 10%
+    absoluteToleranceFactor = 0.01 // 1%
+  } = options;
+
+  // Handling extreme cases
+  if (!arr || arr.length === 0) {
+    return "";
+  }
+  if (arr.length === 1) {
+    return "1";
+  }
+
+  // --- Adaptive tolerance calculation ---
+  const maxMagnitude = Math.max(...arr.map(num => Math.abs(num)));
+  const adaptiveAbsoluteTolerance = maxMagnitude * absoluteToleranceFactor;
+
+  // --- Auxiliary function for determining similarity ---
+  const areSimilar = (a, b) => {
+    const absoluteDiff = Math.abs(a - b);
+
+    // 1. Adaptive absolute tolerance check.
+    // This works well for any scale, especially for numbers near zero.
+    if (absoluteDiff <= adaptiveAbsoluteTolerance) {
+      return true;
+    }
+
+    // 2. If the first check fails, we use relative tolerance.
+    // This is important for large numbers, where the absolute difference can be large.
+    const maxLocalMagnitude = Math.max(Math.abs(a), Math.abs(b));
+    if (maxLocalMagnitude === 0) {
+      return true; // if a=0 and b=0
+    }
+    const relativeDiff = absoluteDiff / maxLocalMagnitude;
+
+    return relativeDiff < relativeTolerance;
+  };
+
+  // --- Basic logic ---
+  let portraitString = "";
+  let currentGroupCount = 1;
+
+  for (let i = 1; i < arr.length; i++) {
+    if (areSimilar(arr[i], arr[i - 1])) {
+      currentGroupCount++;
+    } else {
+      portraitString += currentGroupCount;
+      currentGroupCount = 1;
+    }
+  }
+
+  portraitString += currentGroupCount;
+  return portraitString;
 }
 
 
-
-
+function checker(stats, arr){
+        const av = [];
+        for(let j=0; j<stats[0].length; j++){ 
+                av.push(Aver(getColumn(stats, j)));
+        }
+        const p_arr = Portrait_1(arr);
+        const p_av = Portrait_1(av);
+        return p_arr === p_av;
+}
